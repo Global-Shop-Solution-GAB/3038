@@ -1,0 +1,187 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("Days")
+gui.Form1..size(3585,2475)
+gui.Form1..minx(0)
+gui.Form1..miny(0)
+gui.Form1..position(0,0)
+gui.Form1..event(unload,form1_unload)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.lblFullDays.create(label,"Full Days",True,1935,255,1,200,400,True,0,Arial,8,-2147483633,0)
+gui.Form1.lblFullDays.defaultvalue("")
+gui.Form1.lblFullDays.controlgroup(0)
+gui.Form1.lblHalfDays.create(label,"Half Days",True,1935,255,1,1900,400,True,0,Arial,8,-2147483633,0)
+gui.Form1.lblHalfDays.defaultvalue("")
+gui.Form1.lblHalfDays.controlgroup(0)
+gui.Form1.txtFullDays.create(textbox,"",True,1215,300,0,200,710,True,0,Arial,8,-2147483643,1)
+gui.Form1.txtFullDays.defaultvalue("")
+gui.Form1.txtFullDays.controlgroup(0)
+gui.Form1.txtHalfDays.create(textbox,"",True,1215,300,0,1900,710,True,0,Arial,8,-2147483643,1)
+gui.Form1.txtHalfDays.defaultvalue("")
+gui.Form1.txtHalfDays.controlgroup(0)
+gui.Form1.cmdOK.create(button)
+gui.Form1.cmdOK.caption("Ok")
+gui.Form1.cmdOK.visible(True)
+gui.Form1.cmdOK.size(855,375)
+gui.Form1.cmdOK.zorder(0)
+gui.Form1.cmdOK.position(200,1400)
+gui.Form1.cmdOK.enabled(True)
+gui.Form1.cmdOK.fontname("Arial")
+gui.Form1.cmdOK.fontsize(8)
+gui.Form1.cmdOK.event(click,cmdok_click)
+gui.Form1.cmdOK.defaultvalue("")
+gui.Form1.cmdOK.controlgroup(0)
+gui.Form1.txtFullDays.tabstop(True)
+gui.Form1.txtFullDays.tabindex(1)
+gui.Form1.txtHalfDays.tabstop(True)
+gui.Form1.txtHalfDays.tabindex(2)
+gui.Form1.cmdOK.tabstop(True)
+gui.Form1.cmdOK.tabindex(3)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.semp.Declare(String)
+V.Local.ssql.Declare(String)
+
+'Project for Adams Company have custom vacation hours per day by employee
+'Coded by: WAW
+'Date 10/6/15
+
+'open connection
+F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+'if the populate hook fires on teh employees screen change the text of the script 1 button
+F.Intrinsic.Control.If(V.Caller.Hook,=,15340)
+	V.Passed.000110.Set("Hours")
+F.Intrinsic.Control.EndIf
+
+'If the script 1 button is selected display the form
+F.Intrinsic.Control.If(V.Caller.Hook,=,15360)
+	V.Local.semp.Set(V.passed.000003)
+	'left pad 5 characters with 0s
+	F.Intrinsic.String.LPad(V.Local.semp,"0",5,V.Local.semp)
+	
+	F.Intrinsic.string.Build("SELECT FULLDAYS, HALFDAYS from GCG_CUSTOM_VACHRS where EMPLOYEE = '{0}'",V.Local.semp,V.Local.ssql)
+	F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.ssql)
+	'check the custom table to see if there is already data in for the current employee, if so populate the textboxes on the form
+	F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+		Gui.Form1.txtFullDays.Text(V.ODBC.con!rst.FieldValTrim!FULLDAYS)
+		Gui.form1.txthalfdays.Text(V.ODBC.con!rst.FieldValTrim!HALFDAYS)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rst.Close
+	Gui.Form1..Visible(true)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: NewScript.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+program.sub.form1_unload.start
+F.Intrinsic.Control.SetErrorHandler("form1_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'close connection to the database
+F.ODBC.Connection!con.Close
+
+'end the program
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("form1_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_Custom_VacHrs_6479.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.form1_unload.end
+
+program.sub.cmdok_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdok_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.semp.Declare(String)
+V.Local.sFULLDAYS.Declare(String)
+V.Local.sHALFDAYS.Declare(String)
+V.Local.ssql.Declare(String)
+V.Local.ssql2.Declare(String)
+
+'set the employee as local variable
+V.Local.semp.Set(V.Passed.000003)
+
+'left pad 5 characters with 0s
+F.Intrinsic.String.LPad(V.Local.semp,"0",5,V.Local.semp)
+'set the FULLDAYS and HALFDAYS local variables
+V.Local.sFULLDAYS.Set(V.Screen.Form1!txtFULLDays.Text)
+V.Local.sHALFDAYS.Set(V.Screen.Form1!txtHALFDays.Text)
+
+F.Intrinsic.String.build("Select EMPLOYEE, FULLDAYS, HALFDAYS from GCG_CUSTOM_VACHRS where EMPLOYEE = '{0}'",V.Local.semp,V.Local.ssql)
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.ssql)
+'update the custom table with the new information
+F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+	F.Intrinsic.String.Build("UPDATE GCG_CUSTOM_VACHRS set FULLDAYS = '{0}', HALFDAYS = '{1}' where EMPLOYEE = '{2}'",V.Local.sFULLDAYS,V.Local.sHALFDAYS,V.local.semp,V.Local.ssql2)
+	F.ODBC.Connection!con.OpenRecordsetRW("rst2",V.Local.ssql2)
+	F.ODBC.con!rst2.Close
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Build("INSERT INTO GCG_CUSTOM_VACHRS (EMPLOYEE, FULLDAYS, HALFDAYS) VALUES ('{0}', '{1}','{2}')",V.Local.semp,V.Local.sFULLDAYS,V.Local.sHALFDAYS,V.Local.ssql2)
+	F.ODBC.Connection!con.OpenRecordsetRW("rst2",V.Local.ssql2)
+	F.ODBC.con!rst2.Close
+F.Intrinsic.Control.EndIf
+
+'close the form
+Gui.Form1..Visible(false)
+'close connection to the database
+F.ODBC.con!rst.Close
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdok_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_Custom_VacHrs_6479.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.cmdok_click.end
+
+Program.Sub.Comments.Start
+${$0$}$NewScript$}$WAW$}$10/6/2015
+Program.Sub.Comments.End
+
