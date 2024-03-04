@@ -1,0 +1,142 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'Second part of 3 for Adams company custom vacation hours per day by employee
+'coded by: WAW
+'date: 10/6/2015
+
+'open connection
+'F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+V.Local.semp.Declare(String)
+V.Local.ssql.Declare(String)
+V.Local.sfullday.Declare(Long)
+V.Local.shalfday.Declare(Long)
+'V.Local.lhalfdayvariable.Declare(Long)
+V.Local.outtimehour.Declare(Float)
+V.Local.outtimemin.Declare(Float)
+V.Local.outtimedelim.Declare(String)
+V.Local.ddateout.Declare(Date)
+V.Local.hoursdelim.Declare(String)
+V.Local.hourshour.Declare(String)
+V.Local.hoursmin.Declare(String)
+V.Local.dactualdate.Declare(Date)
+V.Local.fstarthours.Declare(Float)
+V.Local.fendhours.Declare(Float)
+V.Local.fhours.Declare(Float)
+
+'When the populate hook fires
+F.Intrinsic.Control.If(V.Caller.Hook,=,25720)
+
+	F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+	'set the hidden control properties
+	F.Intrinsic.Variable.SetProperty("GAB-LBL-1","PL",156)
+	F.Intrinsic.variable.SetProperty("GAB-LBL-1","PT",193)
+	F.Intrinsic.Variable.SetProperty("GAB-LBL-1","PW",47)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-LBL-1,"HIDE",0)
+	V.Passed.GAB-LBL-1.Set("Half Days")
+	F.Intrinsic.Variable.SetProperty("GAB-CHK-1","PL",138)
+	F.Intrinsic.Variable.SetProperty("GAB-CHK-1","PT",193)
+	F.Intrinsic.variable.SetProperty("GAB-CHK-1","PW",15)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-CHK-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-CHK-1,"LOCK",0)
+	F.ODBC.Connection!con.close
+'	V.Passed.000074.Set("N")
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.000074,"HIDE",1)
+	F.Intrinsic.Variable.SetProperty("GAB-CHK-2","PL",138)
+	F.Intrinsic.variable.SetProperty("GAB-CHK-2","PT",215)
+	F.Intrinsic.Variable.SetProperty("GAB-CHK-2","PW",15)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-CHK-2,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-CHK-2,"LOCK",0)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,48494)
+F.Intrinsic.Control.AndIf(V.passed.000083,<>,000000)
+	
+'	V.Passed.GAB-CHK-1.set("Y")
+	V.Passed.GAB-CHK-2.Set("N")
+	F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+'	V.Passed.000074.Set("N")
+	'set the employee number as a local variable
+	V.Local.semp.Set(V.passed.000096)
+	V.Local.fendhours.Set(V.Passed.000089)
+	V.Local.fhours.Set(V.Passed.000163)
+	V.Local.fstarthours.Set(V.Passed.000004)
+	'left pad 5 characters with 0s
+	F.Intrinsic.String.LPad(V.Local.semp,"0",5,V.Local.semp)
+
+	F.Intrinsic.string.Build("Select HALFDAYS from GCG_CUSTOM_VACHRS where EMPLOYEE = '{0}'",V.local.semp,V.Local.ssql)
+	F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.ssql)
+	F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+			V.Local.shalfday.Set(V.ODBC.con!rst.FieldValTrim!HALFDAYS)
+			V.Passed.000163.Set(V.Local.shalfday)
+			F.Intrinsic.Math.Add(V.Local.fstarthours,V.Local.shalfday,V.Local.shalfday)
+			V.Passed.000089.Set(V.Local.shalfday)
+			
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rst.Close
+	
+	F.ODBC.Connection!con.close
+
+F.Intrinsic.Control.EndIf
+'F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,48495)
+F.Intrinsic.Control.AndIf(V.passed.000083,<>,000000)
+
+	V.Passed.GAB-CHK-1.Set("N")
+
+	F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+'	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-CHK-1,"LOCK",1)
+	V.Local.fendhours.Set(V.Passed.000089)
+	V.Local.fhours.Set(V.Passed.000163)
+	V.Local.fstarthours.Set(V.Passed.000004)
+	'set the employee number as a local variable
+	V.Local.semp.Set(V.passed.000096)
+	'left pad 5 characters with 0s
+	F.Intrinsic.String.LPad(V.Local.semp,"0",5,V.Local.semp)
+
+	'if the fullday checkbox is checked, get the fullday field from the custom table associated with that employee and update the end date/time
+'	F.intrinsic.Control.if(V.Passed.00074,=,"Y")
+		F.Intrinsic.string.Build("Select FULLDAYS from GCG_CUSTOM_VACHRS where EMPLOYEE = '{0}'",V.local.semp,V.Local.ssql)
+		F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.ssql)
+		F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+			V.Local.sfullday.Set(V.ODBC.con!rst.FieldValTrim!FULLDAYS)
+			V.Passed.000163.Set(V.Local.sfullday)
+			F.Intrinsic.Math.Add(V.Local.fstarthours,V.Local.sfullday,V.Local.sfullday)
+			V.Passed.000089.Set(V.Local.sfullday)
+		F.Intrinsic.Control.EndIf
+		F.ODBC.con!rst.Close
+	F.ODBC.Connection!con.close
+'F.Intrinsic.Control.EndIf
+'F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+'end the program
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_Custom_VacHrs2_6479.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_Custom_VacHrs2_6479$}$WAW$}$10/6/2015
+Program.Sub.Comments.End
+
